@@ -3,13 +3,18 @@ from qiskit_aer import QasmSimulator
 
 import core
 
-
+"""
+Defines BB84 Scheme
+"""
 class BB84Scheme(core.QKDScheme):
+    
     def __init__(self, eavesdropper: bool):
-        simulator = QasmSimulator()
+        simulator = QasmSimulator() 
         
-        qreg_q = QuantumRegister(1, 'q')
-        if eavesdropper:
+        
+        # initialises all registers that will be used
+        qreg_q = QuantumRegister(1, 'q') 
+        if eavesdropper: # gives Eve a register to define measured bit and basis used to measure and send
             creg_e_bit = ClassicalRegister(1, 'e_bit')
             creg_e_bas = ClassicalRegister(1, 'e_bas')
         creg_r_bit = ClassicalRegister(1, 'r_bit')
@@ -17,12 +22,15 @@ class BB84Scheme(core.QKDScheme):
         creg_r_bas = ClassicalRegister(1, 'r_bas')
         creg_s_bas = ClassicalRegister(1, 's_bas')
 
+        # initialises circuit (with the registers that will be used) 
         if eavesdropper:
             circuit = QuantumCircuit(qreg_q, creg_e_bit, creg_e_bas, creg_r_bit, creg_s_bit, creg_r_bas, creg_s_bas)
         else:
             circuit = QuantumCircuit(qreg_q, creg_r_bit, creg_s_bit, creg_r_bas, creg_s_bas)
+            
+        # now gates are added:
 
-        # RNG for basis
+        # RNG for basis (randomises basis for Alice and Bob (and Eve))
         if eavesdropper:
             circuit.h(qreg_q[0])
             circuit.measure(qreg_q[0], creg_e_bas[0])
@@ -30,25 +38,25 @@ class BB84Scheme(core.QKDScheme):
         circuit.measure(qreg_q[0], creg_s_bas[0])
         circuit.h(qreg_q[0])
         circuit.measure(qreg_q[0], creg_r_bas[0])
-        circuit.barrier(qreg_q[0])
+        circuit.barrier(qreg_q[0]) # doesn't do anything? just shows up as a line in the picture
 
-        # Sender
+        # Sender, randomises bit that Alice will send and puts it in polarised basis if that is used
         circuit.h(qreg_q[0])
         circuit.measure(qreg_q[0], creg_s_bit[0])
         circuit.h(qreg_q[0]).c_if(creg_s_bas, 1)
         circuit.barrier(qreg_q[0])
 
-        # Eavesdropper
+        # Eavesdropper, measures (in defined basis) and sends in same basis
         if eavesdropper:
             circuit.h(qreg_q[0]).c_if(creg_e_bas, 1)
             circuit.measure(qreg_q[0], creg_e_bit[0])
             circuit.h(qreg_q[0]).c_if(creg_e_bas, 1)
 
-        # Receiver
+        # Receiver, measures in defined basis
         circuit.h(qreg_q[0]).c_if(creg_r_bas, 1)
         circuit.measure(qreg_q[0], creg_r_bit[0])
 
-        self._circuit = transpile(circuit, simulator)
+        self._circuit = transpile(circuit, simulator) #? adds circuit to self._circuit
         self._eavesdropper = eavesdropper
 
     def _get_circuit(self):
