@@ -2,7 +2,8 @@ from bb84 import BB84Scheme
 from e91 import E91Scheme
 from b92 import B92Scheme
 from core import QKDResults
-from pedantic import ValidationInfo
+from pydantic import ValidationInfo
+from qiskit_aer import QasmSimulator
 from qiskit_ibm_runtime import IBMBackend
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 
@@ -12,11 +13,11 @@ Used to execute everything and print out result
 if __name__ == "__main__":
     error_allowed = 0.4
     # three instances with no eavesdropper
-    bb84 = BB84Scheme(False, FakeManilaV2())
+    bb84 = BB84Scheme(False)
     #e91 = E91Scheme(False)
     #b92 = B92Scheme(False)
     # run() returns of type QKDResults, with input number of "shots"
-    bb84_res = bb84.run(1000000, error_allowed) 
+    bb84_res = bb84.run(1000000, error_allowed, FakeManilaV2()) 
     #e91_res = e91.run(1000000, error_allowed)
     #b92_res = b92.run(1000000, error_allowed)
 

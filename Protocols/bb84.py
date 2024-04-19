@@ -9,12 +9,7 @@ Defines BB84 Scheme
 """
 class BB84Scheme(core.QKDScheme):
     
-    def __init__(self, eavesdropper: bool, backend: Union[str, IBMBackend, None]):
-        
-        if backend is None:
-            backend = QasmSimulator()
-        
-        
+    def __init__(self, eavesdropper: bool):
         # initialises all registers that will be used
         qreg_q = QuantumRegister(1, 'q') 
         if eavesdropper: # gives Eve a register to define measured bit and basis used to measure and send
@@ -59,7 +54,7 @@ class BB84Scheme(core.QKDScheme):
         circuit.h(qreg_q[0]).c_if(creg_r_bas, 1)
         circuit.measure(qreg_q[0], creg_r_bit[0])
 
-        self._circuit = transpile(circuit, backend) 
+        self._circuit = circuit
         self._eavesdropper = eavesdropper
 
     def _get_circuit(self):

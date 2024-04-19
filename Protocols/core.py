@@ -1,5 +1,6 @@
-from qiskit_aer import QasmSimulator
-from qiskit_ibm_runtime import IBMBackend
+from qiskit import transpile
+from qiskit_aer import QasmSimulator, AerSimulator
+from qiskit_ibm_runtime import IBMBackend, Estimator
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import abc
 import random
@@ -116,17 +117,17 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
     Here is where the schemes are run,
     returns and instance of QKDResults
     """
-    def run(self, shots: int, error_allowed: int, backend: Union[str, IBMBackend, None]) -> QKDResults:
-        
-        circ = self._get_circuit()
+    def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None) -> QKDResults:
+        simulator = AerSimulator.from_backend(backend)
+        circ = transpile(self._circuit, simulator)
         error = 1
         runs = 0
         estimator = Estimator(backend)
         
         while error > error_allowed: 
             bit_counts = dict()
-            #job = backend.run(circ, shots=shots)
-            job = estimator.run(circ, shots=shots)
+            job = simulator.run(circ, shots=shots)
+            #job = estimator.run(circ, shots=shots)
             result = job.result().get_counts()
             print("[dbg] result", result)
             
