@@ -1,6 +1,8 @@
 from qiskit_aer import QasmSimulator
-
+from qiskit_ibm_runtime import IBMBackend
+from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import abc
+import random
 """
 File for defining objects QKDBits, QKDResult and QKDScheme.
 """
@@ -55,13 +57,16 @@ class QKDResults():
     _bit_counts: dict[QKDBits, int] # result from a transmission of QKD key, QKDBits from transmission that "are the same" are grouped together with a counter
     _certainty_count: int | None # total number of qubits that was measured in the same basis by Alice and Bob
     _bit_error_count: int | None # total number of errors between Alice's key and Bob's
+    _bit_error_compared: int | None
+    _number_of_runs: int | None
 
-    def __init__(self, bit_counts: dict[QKDBits, int]):
+    def __init__(self, bit_counts: dict[QKDBits, int], n_runs: int):
         self._bit_counts = bit_counts 
         self._total_count = sum([count for (bits, count) in self._bit_counts.items()])
         self._rke = None # raw key efficiency
         self._certainty_count = None 
         self._bit_error_count = None
+        self._number_of_runs = n_runs
 
     def raw_key_efficiency(self):
         self._calc_certainty_count()
@@ -82,6 +87,7 @@ class QKDResults():
             return self._bit_error_count / self._certainty_count #?
         else:
             return 0
+                
 
     def qber(self): # not needed?
         return self.quantum_bit_error_rate()
@@ -90,6 +96,8 @@ class QKDResults():
         if self._certainty_count is None:
             self._certainty_count = sum([count for (bits, count) in self._bit_counts.items() if bits.certain])
 
+    def n_runs(self):
+        return self._number_of_runs
 
 
 """
@@ -108,20 +116,29 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
     Here is where the schemes are run,
     returns and instance of QKDResults
     """
-    def run(self, shots: int) -> QKDResults:
+    def run(self, shots: int, error_allowed: int, backend: Union[str, IBMBackend, None]) -> QKDResults:
         
-        simulator = QasmSimulator()
-        bit_counts = dict()
         circ = self._get_circuit()
-        job = simulator.run(circ, shots=shots) #shots?
-        result = job.result().get_counts() #?
-        print("[dbg] result", result)
+        error = 1
+        runs = 0
+        estimator = Estimator(backend)
         
-        for bits_str, bits_count in result.items(): # for every qubit sent
-            bits_str = bits_str.replace(" ", "")
-            bits = self._interpret_bits(bits_str) #returnerar en instans av QKDBits
-            bits._calc_error()
-            if bits not in bit_counts: # if we get several identical transmissions we count them together
-                bit_counts[bits] = 0
-            bit_counts[bits] += bits_count
-        return QKDResults(bit_counts)
+        while error > error_allowed: 
+            bit_counts = dict()
+            #job = backend.run(circ, shots=shots)
+            job = estimator.run(circ, shots=shots)
+            result = job.result().get_counts()
+            print("[dbg] result", result)
+            
+            for bits_str, bits_count in result.items(): # for every qubit sent
+                bits_str = bits_str.replace(" ", "")
+                bits = self._interpret_bits(bits_str) #returnerar en instans av QKDBits
+                bits._calc_error()
+                if bits not in bit_counts: # if we get several identical transmissions we count them together
+                    bit_counts[bits] = 0
+                bit_counts[bits] += bits_count
+            runs+=1    
+            result = QKDResults(bit_counts, runs)
+            error = result.quantum_bit_error_rate()
+            
+        return result 

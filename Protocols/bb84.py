@@ -1,6 +1,7 @@
 from qiskit import QuantumCircuit, transpile, QuantumRegister, ClassicalRegister
 from qiskit_aer import QasmSimulator
-
+from qiskit_ibm_runtime import IBMBackend
+from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import core
 
 """
@@ -8,8 +9,10 @@ Defines BB84 Scheme
 """
 class BB84Scheme(core.QKDScheme):
     
-    def __init__(self, eavesdropper: bool):
-        simulator = QasmSimulator() 
+    def __init__(self, eavesdropper: bool, backend: Union[str, IBMBackend, None]):
+        
+        if backend is None:
+            backend = QasmSimulator()
         
         
         # initialises all registers that will be used
@@ -56,7 +59,7 @@ class BB84Scheme(core.QKDScheme):
         circuit.h(qreg_q[0]).c_if(creg_r_bas, 1)
         circuit.measure(qreg_q[0], creg_r_bit[0])
 
-        self._circuit = transpile(circuit, simulator) #? adds circuit to self._circuit
+        self._circuit = transpile(circuit, backend) 
         self._eavesdropper = eavesdropper
 
     def _get_circuit(self):
