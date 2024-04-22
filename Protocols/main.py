@@ -11,13 +11,15 @@ from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 Used to execute everything and print out result
 """
 if __name__ == "__main__":
-    error_allowed = 0.4
+    error_allowed = 0.2
     # three instances with no eavesdropper
     bb84 = BB84Scheme(False)
+    bb84_in_simulated = BB84Scheme(False)
     #e91 = E91Scheme(False)
     #b92 = B92Scheme(False)
     # run() returns of type QKDResults, with input number of "shots"
-    bb84_res = bb84.run(1000000, error_allowed, FakeManilaV2()) 
+    bb84_res = bb84.run(1000000, error_allowed, None) 
+    bb84_res_simulated = bb84_in_simulated.run(1000000, error_allowed, FakeManilaV2()) 
     #e91_res = e91.run(1000000, error_allowed)
     #b92_res = b92.run(1000000, error_allowed)
 
@@ -32,15 +34,18 @@ if __name__ == "__main__":
     # prints result of running QKD schemes (with and without eavesdropper)
     # in terms of raw key efficiency and qubit error rate
     print("\n")
-    print("BB84 number of runs:\t", bb84_res.n_runs(), "\n")
+    print("BB84 ideal number of runs:\t", bb84_res.n_runs(), "\n")
+    print("BB84 simulated number of runs:\t", bb84_res_simulated.n_runs(), "\n")
     #print("BB84 e number of runs:\t", bb84_e_res.n_runs(), "\n")
     #print("E91 number of runs:\t", e91_res.n_runs(), "\n")
     #print("B92 number of runs:\t", b92_res.n_runs(), "\n")
     
     
-    print("BB84 RKE:\t", bb84_res.rke(), "\n")
+    print("BB84 ideal RKE:\t", bb84_res.rke(), "\n")
+    print("BB84 simulated RKE:\t", bb84_res_simulated.rke(), "\n")
     #print("BB84 (w/ eve) RKE:\t", bb84_e_res.rke(), "\n")
-    print("BB84 QBER:\t", bb84_res.qber(), "\n")
+    print("BB84 ideal QBER:\t", bb84_res.qber(), "\n")
+    print("BB84 simulated QBER:\t", bb84_res_simulated.qber(), "\n")
     #print("BB84 (w/ eve) QBER:\t", bb84_e_res.qber(), "\n")
     #print("E91 RKE:\t", e91_res.rke(), "\n")
     #print("E91 (w/ eve) RKE:\t", e91_e_res.rke(), "\n")

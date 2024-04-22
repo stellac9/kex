@@ -118,11 +118,14 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
     returns and instance of QKDResults
     """
     def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None) -> QKDResults:
-        simulator = AerSimulator.from_backend(backend)
+        if backend is None:
+            simulator = QasmSimulator()
+        else:
+            simulator = AerSimulator.from_backend(backend)
         circ = transpile(self._circuit, simulator)
         error = 1
         runs = 0
-        estimator = Estimator(backend)
+        #estimator = Estimator(backend)
         
         while error > error_allowed: 
             bit_counts = dict()
