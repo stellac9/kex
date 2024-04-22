@@ -4,7 +4,7 @@ from qiskit_ibm_runtime import IBMBackend, Estimator
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import abc
 from qiskit_ibm_runtime import QiskitRuntimeService
-
+from qiskit_aer.noise import NoiseModel, QuantumError, pauli_error
 """
 File for defining objects QKDBits, QKDResult and QKDScheme.
 """
@@ -118,11 +118,18 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
     Here is where the schemes are run,
     returns and instance of QKDResults
     """
-    def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None) -> QKDResults:
-        if backend is None:
-            simulator = QasmSimulator()
+    def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None, noise: bool) -> QKDResults:
+        if noise:
+            noise_model = NoiseModel()
+            p_error = 0.05
+            bit_flip = pauli_error([('X', p_error), ('I', 1 - p_error)])
+            noise_model.add_quantum_error(bit_flip, ['h', 'measure'], [0])
+            simulator = AerSimulator(noise_model=noise_model)
+        elif backend is None:
+            simulator = AerSimulator()
         else:
             simulator = AerSimulator.from_backend(backend)
+            
         circ = transpile(self._circuit, simulator)
         error = 1
         runs = 0

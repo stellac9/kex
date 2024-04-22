@@ -1,7 +1,7 @@
 from qiskit import QuantumCircuit, transpile, QuantumRegister, ClassicalRegister
 from qiskit_aer import QasmSimulator
 from qiskit_ibm_runtime import IBMBackend
-from qiskit_ibm_runtime.fake_provider import FakeManilaV2
+
 import core
 
 """
@@ -15,6 +15,7 @@ class BB84Scheme(core.QKDScheme):
         if eavesdropper: # gives Eve a register to define measured bit and basis used to measure and send
             creg_e_bit = ClassicalRegister(1, 'e_bit')
             creg_e_bas = ClassicalRegister(1, 'e_bas')
+        
         creg_r_bit = ClassicalRegister(1, 'r_bit')
         creg_s_bit = ClassicalRegister(1, 's_bit')
         creg_r_bas = ClassicalRegister(1, 'r_bas')
@@ -25,6 +26,10 @@ class BB84Scheme(core.QKDScheme):
             circuit = QuantumCircuit(qreg_q, creg_e_bit, creg_e_bas, creg_r_bit, creg_s_bit, creg_r_bas, creg_s_bas)
         else:
             circuit = QuantumCircuit(qreg_q, creg_r_bit, creg_s_bit, creg_r_bas, creg_s_bas)
+        
+        
+        
+        
             
         # now gates are added:
 
@@ -49,6 +54,8 @@ class BB84Scheme(core.QKDScheme):
             circuit.h(qreg_q[0]).c_if(creg_e_bas, 1)
             circuit.measure(qreg_q[0], creg_e_bit[0])
             circuit.h(qreg_q[0]).c_if(creg_e_bas, 1)
+            
+        
 
         # Receiver, measures in defined basis
         circuit.h(qreg_q[0]).c_if(creg_r_bas, 1)
