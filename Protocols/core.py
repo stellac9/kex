@@ -3,7 +3,8 @@ from qiskit_aer import QasmSimulator, AerSimulator
 from qiskit_ibm_runtime import IBMBackend, Estimator
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import abc
-import random
+from qiskit_ibm_runtime import QiskitRuntimeService
+
 """
 File for defining objects QKDBits, QKDResult and QKDScheme.
 """
