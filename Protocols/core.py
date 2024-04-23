@@ -1,10 +1,10 @@
 from qiskit import transpile
 from qiskit_aer import QasmSimulator, AerSimulator
-from qiskit_ibm_runtime import IBMBackend, Estimator
+from qiskit_ibm_runtime import IBMBackend, QiskitRuntimeService, Estimator, Sampler, Session
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import abc
-from qiskit_ibm_runtime import QiskitRuntimeService
 from qiskit_aer.noise import NoiseModel, QuantumError, pauli_error
+
 """
 File for defining objects QKDBits, QKDResult and QKDScheme.
 """
@@ -119,6 +119,9 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
     returns and instance of QKDResults
     """
     def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None, noise: bool) -> QKDResults:
+        QiskitRuntimeService.save_account(channel="ibm_quantum", token="5c637bdb0dbf0622b494355f6b37089c0669ff9773c4cbd2aaf61cca27d8623390b8ac5bd3557c538b8dc93cc50e3e34a43f680325c6055f72bb29b37b5627da", overwrite=True)
+        service = QiskitRuntimeService()
+        backend_real = service.get_backend("ibm_brisbane")
         if noise:
             noise_model = NoiseModel()
             p_error = 0.05
@@ -137,7 +140,10 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
         
         while error > error_allowed: 
             bit_counts = dict()
-            job = simulator.run(circ, shots=shots)
+            with Session(service, backend="ibm_brisbane") as session:
+                sampler = Sampler(session=session)
+                job = sampler.run(self._circuit, shots=shots)
+                print("hej2")
             #job = estimator.run(circ, shots=shots)
             result = job.result().get_counts()
             print("[dbg] result", result)
