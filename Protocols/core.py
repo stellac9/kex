@@ -1,9 +1,10 @@
 from qiskit import transpile
 from qiskit_aer import QasmSimulator, AerSimulator
-from qiskit_ibm_runtime import IBMBackend, QiskitRuntimeService, Estimator, Sampler, Session
+from qiskit_ibm_runtime import IBMBackend, QiskitRuntimeService, Estimator, SamplerV2, Session
 from qiskit_ibm_runtime.fake_provider import FakeManilaV2
 import abc
 from qiskit_aer.noise import NoiseModel, QuantumError, pauli_error
+from qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager
 
 """
 File for defining objects QKDBits, QKDResult and QKDScheme.
@@ -118,33 +119,39 @@ class QKDScheme(abc.ABC): # abc = abstract base classes
     Here is where the schemes are run,
     returns and instance of QKDResults
     """
-    def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None, noise: bool) -> QKDResults:
-        QiskitRuntimeService.save_account(channel="ibm_quantum", token="5c637bdb0dbf0622b494355f6b37089c0669ff9773c4cbd2aaf61cca27d8623390b8ac5bd3557c538b8dc93cc50e3e34a43f680325c6055f72bb29b37b5627da", overwrite=True)
-        service = QiskitRuntimeService()
-        backend_real = service.get_backend("ibm_brisbane")
-        if noise:
+    def run(self, shots: int, error_allowed: int, backend: str | IBMBackend | None, noise: bool, real: bool) -> QKDResults:
+        if real:
+            QiskitRuntimeService.save_account(channel="ibm_quantum", token="5c637bdb0dbf0622b494355f6b37089c0669ff9773c4cbd2aaf61cca27d8623390b8ac5bd3557c538b8dc93cc50e3e34a43f680325c6055f72bb29b37b5627da", overwrite=True)
+            service = QiskitRuntimeService()
+            #backend_ibm = service.least_busy(operational=True, simulator=False, min_num_qubits=127)
+            backend_ibm = service.backend("ibm_brisbane")
+            pm = generate_preset_pass_manager(backend=backend_ibm, optimization_level=1)
+            isa_circuit = pm.run(self._circuit)
+        elif noise:
             noise_model = NoiseModel()
             p_error = 0.05
             bit_flip = pauli_error([('X', p_error), ('I', 1 - p_error)])
             noise_model.add_quantum_error(bit_flip, ['h', 'measure'], [0])
             simulator = AerSimulator(noise_model=noise_model)
+            circ = transpile(self._circuit, simulator)
         elif backend is None:
             simulator = AerSimulator()
+            circ = transpile(self._circuit, simulator)
         else:
             simulator = AerSimulator.from_backend(backend)
-            
-        circ = transpile(self._circuit, simulator)
+            circ = transpile(self._circuit, simulator)
+
         error = 1
         runs = 0
-        #estimator = Estimator(backend)
-        
         while error > error_allowed: 
             bit_counts = dict()
-            with Session(service, backend="ibm_brisbane") as session:
-                sampler = Sampler(session=session)
-                job = sampler.run(self._circuit, shots=shots)
-                print("hej2")
-            #job = estimator.run(circ, shots=shots)
+            if real:
+                with Session(service, backend=backend_ibm) as session:
+                    sampler = SamplerV2(session=session)
+                    job = sampler.run([isa_circuit], shots=shots)
+            else:
+                job = simulator.run(circ, shots = shots)
+            
             result = job.result().get_counts()
             print("[dbg] result", result)
             

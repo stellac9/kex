@@ -26,7 +26,7 @@ if __name__ == "__main__":
     #bb84_res = bb84.run(1000000, error_allowed, None, False) 
     #bb84_res_error = bb84_error.run(1000000, error_allowed, None, True) 
     #bb84_res_simulated = bb84_in_simulated.run(1000000, error_allowed, FakeManilaV2(), False) 
-    bb84_res_real = bb84_in_real.run(1, error_allowed, None, False) 
+    bb84_res_real = bb84_in_real.run(1, error_allowed, None, False, True) 
     #e91_res = e91.run(1000000, error_allowed)
     #b92_res = b92.run(1000000, error_allowed)
 
