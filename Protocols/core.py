@@ -75,7 +75,7 @@ class QKDResults():
         self._calc_certainty_count()
         print("[dgb] certainty_count", self._certainty_count) #dgb?
         print("[dgb] total_count", self._total_count)
-        return self._certainty_count / self._total_count #should it not be number of bits that are the same, not whether same basis used? also should be smaller after comparision
+        return self._certainty_count / (self._total_count*self._number_of_runs)#should it not be number of bits that are the same, not whether same basis used? also should be smaller after comparision
 
     def rke(self): # not needed?
         return self.raw_key_efficiency()
